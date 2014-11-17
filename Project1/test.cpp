@@ -1,44 +1,22 @@
 #include "d3dUtility.h"
-#define FVF_COLOR (D3DFVF_XYZ | D3DFVF_DIFFUSE)
-struct ColorVertex
-{
-	ColorVertex(){}
 
-	ColorVertex(float x, float y, float z, D3DCOLOR c)
-	{
-		_x = x;	 _y = y;  _z = z;  _color = c;
-	}
-
-	float _x, _y, _z;
-	D3DCOLOR _color;
-
-	static const DWORD FVF;
-};
-const DWORD ColorVertex::FVF = D3DFVF_XYZ | D3DFVF_DIFFUSE;
 const int Height = 600;
 const int Width = 800;
-D3DXMATRIX World;
-IDirect3DVertexBuffer9 *Triangel = nullptr;
+ID3DXMesh *Obj[4] = { 0, 0, 0, 0 };
+D3DXMATRIX ObjMatrix[4];
 IDirect3DDevice9 *D3DDevice = nullptr;
 
 bool Setup()
 {
-	D3DDevice->CreateVertexBuffer(
-		3 * sizeof(ColorVertex),
-		D3DUSAGE_WRITEONLY,
-		ColorVertex::FVF,
-		D3DPOOL_MANAGED,
-		&Triangel,
-		0);
+	D3DXCreateTeapot(D3DDevice, &Obj[0],0);
+	D3DXCreateBox(D3DDevice,2.0f,2.0f,2.0f,&Obj[1],0);
+	D3DXCreateCylinder(D3DDevice, 1.0f, 1.0f, 3.0f, 10, 10, &Obj[2], 0);
+	D3DXCreateTorus(D3DDevice, 1.0f, 3.0f, 10, 10, &Obj[3], 0);
 
-	ColorVertex *vertexs = nullptr;
-
-	Triangel->Lock(0, 0, (void**)&vertexs, 0);
-
-	vertexs[0] = ColorVertex(-1.0f, 0.0f, 2.0f, D3DCOLOR_XRGB(255, 0, 0));
-	vertexs[1] = ColorVertex(0.0f, 1.0f, 2.0f, D3DCOLOR_XRGB(0, 255, 0));
-	vertexs[2] = ColorVertex(1.0f, 0.0f, 2.0f, D3DCOLOR_XRGB(0, 0, 255));
-	Triangel->Unlock();
+	D3DXMatrixTranslation(&ObjMatrix[0], 0.0f, 0.0f, 0.0f);
+	D3DXMatrixTranslation(&ObjMatrix[1], -5.0f, 0.0f, 5.0f);
+	D3DXMatrixTranslation(&ObjMatrix[2], 5.0f, 0.0f, 5.0f);
+	D3DXMatrixTranslation(&ObjMatrix[3], -5.0f, 0.0f, -5.0f);
 
 	D3DXMATRIX proj;
 	D3DXMatrixPerspectiveFovLH(
@@ -46,41 +24,60 @@ bool Setup()
 		D3DX_PI * 0.5f,
 		(float)Width / (float)Height,
 		1.0f,
-		10.0f);
+		1000.0f);
 	D3DDevice->SetTransform(D3DTS_PROJECTION, &proj);
 
-	D3DDevice->SetRenderState(D3DRS_LIGHTING, false);
+	D3DDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
 
 	return true;
 }
 void Cleanup()
 {
-	d3d::Release<IDirect3DVertexBuffer9*>(Triangel);
+	for (int i = 0; i < 4; i++)
+	{
+		d3d::Release<ID3DXMesh*>(Obj[i]);
+	}
 }
 bool Display(float timeDelta)
 {
 	if (D3DDevice)
 	{
 
+		static float angle = (3.0 * D3DX_PI) / 2.0f;
+		static float cameraHeight = 0.0f;
+		static float cameraHeightDirection = 5.0f;
+
+		D3DXVECTOR3 pos(cosf(angle) * 10.0f, cameraHeight, sinf(angle)* 1.0f);
+		D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
+
+		D3DXMATRIX View;
+		D3DXMatrixLookAtLH(&View, &pos, &target, &up);
+		
+		D3DDevice->SetTransform(D3DTS_VIEW, &View);
+
+		angle += timeDelta;
+		if (angle >= 6.28f)
+			angle = 0.0f;
+
+		cameraHeight += cameraHeightDirection * timeDelta;
+		if (cameraHeight >= 10.0f)
+		{
+			cameraHeightDirection = -5.0f;
+		}
+		if (cameraHeight <= -10.0)
+		{
+			cameraHeightDirection = 5.0f;
+		}
+
 		D3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xffffffff, 1.0f, 0);
 
 		D3DDevice->BeginScene();
-
-		D3DDevice->SetStreamSource(0, Triangel, 0, sizeof(ColorVertex));
-		D3DDevice->SetFVF(ColorVertex::FVF);
-
-		D3DXMatrixTranslation(&World, -1.25f, 0.0f, 0.0f);
-		D3DDevice->SetTransform(D3DTS_WORLD, &World);
-
-		D3DDevice->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_FLAT);
-		D3DDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, 0,1);
-
-		D3DXMatrixTranslation(&World, 1.25f, 0.0f, 0.0f);
-		D3DDevice->SetTransform(D3DTS_WORLD, &World);
-
-		D3DDevice->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
-		D3DDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, 0,1);
-
+		for (int i = 0; i < 4; i++)
+		{
+			D3DDevice->SetTransform(D3DTS_WORLD, &ObjMatrix[i]);
+			Obj[i]->DrawSubset(0);
+		}
 
 		D3DDevice->EndScene();
 		D3DDevice->Present(0, 0, 0, 0);
