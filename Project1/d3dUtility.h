@@ -10,11 +10,11 @@ namespace d3d
 
 	LRESULT CALLBACK winProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-	template<class T> void Relese(T t)
+	template<class T> void Release(T t)
 	{
 		if (t)
 		{
-			t->Relese();
+			t->Release();
 			t = nullptr;
 		}
 	}
