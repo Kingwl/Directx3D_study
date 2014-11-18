@@ -31,10 +31,13 @@ bool Setup()
 	Mtrls[2] = d3d::GREEN_MTRL;
 	Mtrls[3] = d3d::YELLOW_MTRL;
 
-	D3DXVECTOR3 dir(1.0f, 0.0f, 0.25f);
+	D3DXVECTOR3 dir(0.0f, 0.0f, -10.0f);
 	D3DXCOLOR c = d3d::WHITE;
-	D3DLIGHT9 dirLight = d3d::InitDirectionalLight(&dir, &c);
-
+	D3DXVECTOR3 to(0.0f, 0.0f, 1.0f);
+	D3DLIGHT9 dirLight = d3d::InitSpotLight(&dir,&to , &c);
+	//D3DLIGHT9 dirLight = d3d::InitPointlLight(&dir, &c);
+	//D3DLIGHT9 dirLight = d3d::InitDirectionalLight(&dir, &c);
+	
 	D3DDevice->SetLight(0, &dirLight);
 	D3DDevice->LightEnable(0,true);
 
