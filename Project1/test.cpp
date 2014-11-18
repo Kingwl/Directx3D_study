@@ -3,46 +3,73 @@
 const int Height = 600;
 const int Width = 800;
 
-ID3DXMesh* Obj[4] = { 0, 0, 0, 0 };
-D3DXMATRIX Worlds[4];
-D3DMATERIAL9 Mtrls[4];
-
-
-
+IDirect3DVertexBuffer9 *Quad = 0;
+IDirect3DTexture9 *Tex = 0;
 IDirect3DDevice9 *D3DDevice = nullptr;
 bool state = true;
 
+struct Vertex{
+	Vertex(){};
+	Vertex(float x, float y, float z, float nx, float ny, float nz, float u, float v)
+		:_x(x), _y(y), _z(z), _nx(nx), _ny(ny), _nz(nz), _u(u), _v(v)
+	{};
+	float _x, _y, _z;
+	float _nx, _ny, _nz;
+	float _u, _v;
+	static const DWORD FVF;
+
+};
+const DWORD Vertex::FVF = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1;
+
+
 bool Setup()
 {
-	D3DDevice->SetRenderState(D3DRS_LIGHTING, true);
+	D3DDevice->CreateVertexBuffer(
+		3 * sizeof(Vertex),
+		D3DUSAGE_WRITEONLY,
+		Vertex::FVF,
+		D3DPOOL_MANAGED,
+		&Quad,
+		0);
 
-	D3DXCreateTeapot(D3DDevice, &Obj[0], 0);
-	D3DXCreateSphere(D3DDevice, 1.0f, 20, 20, &Obj[1], 0);
-	D3DXCreateTorus(D3DDevice, 0.5f, 1.0f, 20, 20, &Obj[2], 0);
-	D3DXCreateCylinder(D3DDevice, 0.5f, 0.5f, 2.0f, 20, 20, &Obj[3], 0);
+	Vertex *v;
+	Quad->Lock(0, 0, (void**)&v, 0);
+	v[0] = Vertex(-1.0f, -1.0f, 1.25f,
+					0.0f, 0.0f, -1.0f,
+					0.0f, 1.0f);
 
-	D3DXMatrixTranslation(&Worlds[0], 0.0f, 2.0f, 0.0f);
-	D3DXMatrixTranslation(&Worlds[1], 0.0f, -2.0f, 0.0f);
-	D3DXMatrixTranslation(&Worlds[2], -3.0f, 0.0f, 0.0f);
-	D3DXMatrixTranslation(&Worlds[3], 3.0f, 0.0f, 0.0f);
+	v[1] = Vertex(-1.0f, 1.0f, 1.25f,
+					0.0f, 0.0f, -1.0f,
+					0.0f, 0.0f);
 
-	Mtrls[0] = d3d::RED_MTRL;
-	Mtrls[1] = d3d::BLUE_MTRL;
-	Mtrls[2] = d3d::GREEN_MTRL;
-	Mtrls[3] = d3d::YELLOW_MTRL;
+	v[2] = Vertex(1.0f, 1.0f, 1.25f,
+					0.0f, 0.0f, -1.0f,
+					1.0f, 0.0f);
 
-	D3DXVECTOR3 dir(0.0f, 0.0f, -10.0f);
-	D3DXCOLOR c = d3d::WHITE;
-	D3DXVECTOR3 to(0.0f, 0.0f, 1.0f);
-	D3DLIGHT9 dirLight = d3d::InitSpotLight(&dir,&to , &c);
-	//D3DLIGHT9 dirLight = d3d::InitPointlLight(&dir, &c);
-	//D3DLIGHT9 dirLight = d3d::InitDirectionalLight(&dir, &c);
-	
-	D3DDevice->SetLight(0, &dirLight);
-	D3DDevice->LightEnable(0,true);
+	v[3] = Vertex(-1.0f, -1.0f, 1.25f,
+					0.0f, 0.0f, -1.0f,
+					0.0f, 1.0f);
 
-	D3DDevice->SetRenderState(D3DRS_NORMALIZENORMALS, true);
-	D3DDevice->SetRenderState(D3DRS_SPECULARENABLE, true);
+	v[4] = Vertex(1.0f, 1.0f, 1.25f, 
+					0.0f, 0.0f, -1.0f,
+					1.0f, 0.0f);
+
+	v[5] = Vertex(1.0f, -1.0f, 1.25f,
+					0.0f, 0.0f, -1.0f, 
+					1.0f, 1.0f);
+	Quad->Unlock();
+
+	D3DXCreateTextureFromFile(
+		D3DDevice,
+		"logo.bmp",
+		&Tex);
+
+	D3DDevice->SetTexture(0, Tex);
+	D3DDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	D3DDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	D3DDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_POINT);
+
+	D3DDevice->SetRenderState(D3DRS_LIGHTING, false);
 
 	D3DXMATRIX proj;
 	D3DXMatrixPerspectiveFovLH(
@@ -53,54 +80,24 @@ bool Setup()
 		1000.0f);
 	D3DDevice->SetTransform(D3DTS_PROJECTION, &proj);
 	
-
-
 	return true;
 }
 void Cleanup()
 {
-	for (int i = 0; i < 4; i++)
-		d3d::Release<ID3DXMesh*>(Obj[i]);
+	d3d::Release<IDirect3DVertexBuffer9*>(Quad);
+	d3d::Release<IDirect3DTexture9*>(Tex);
 }
 bool Display(float timeDelta)
 {
 	if (D3DDevice)
 	{
-
-		static float angle = (3.0f * D3DX_PI) / 2.0f;
-		static float height = 5.0f;
-
-		if (::GetAsyncKeyState(VK_LEFT) & 0x8000f)
-			angle -= 0.5f * timeDelta;
-
-		if (::GetAsyncKeyState(VK_RIGHT) & 0x8000f)
-			angle += 0.5f * timeDelta;
-
-		if (::GetAsyncKeyState(VK_UP) & 0x8000f)
-			height += 5.0f * timeDelta;
-
-		if (::GetAsyncKeyState(VK_DOWN) & 0x8000f)
-			height -= 5.0f * timeDelta;
-
-		D3DXVECTOR3 position(cosf(angle) * 7.0f, height, sinf(angle) * 7.0f);
-		D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
-		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
-		D3DXMATRIX V;
-		D3DXMatrixLookAtLH(&V, &position, &target, &up);
-
-		D3DDevice->SetTransform(D3DTS_VIEW, &V);
 		
-
 		D3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
 		D3DDevice->BeginScene();
 
-		for (int i = 0; i < 4; i++)
-		{
-
-			D3DDevice->SetMaterial(&Mtrls[i]);
-			D3DDevice->SetTransform(D3DTS_WORLD, &Worlds[i]);
-			Obj[i]->DrawSubset(0);
-		}
+		D3DDevice->SetStreamSource(0, Quad, 0, sizeof(Vertex));
+		D3DDevice->SetFVF(Vertex::FVF);
+		D3DDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2);
 
 
 		D3DDevice->EndScene();
