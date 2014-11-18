@@ -2,21 +2,77 @@
 
 const int Height = 600;
 const int Width = 800;
-ID3DXMesh *Obj[4] = { 0, 0, 0, 0 };
-D3DXMATRIX ObjMatrix[4];
+struct VertexNormal{
+	VertexNormal() = default;
+	VertexNormal(float x, float y, float z, float nx, float ny, float nz)
+		:_x(x), _y(y), _z(z), _nx(nx), _ny(ny), _nz(nz){}
+	float _x, _y, _z;
+	float _nx, _ny, _nz;
+	static const DWORD FVF;
+}VertexNormalInfo;
+const DWORD VertexNormal::FVF = D3DFVF_XYZ | D3DFVF_NORMAL;
+IDirect3DVertexBuffer9 *Pyramid;
+
 IDirect3DDevice9 *D3DDevice = nullptr;
+bool state = true;
 
 bool Setup()
 {
-	D3DXCreateTeapot(D3DDevice, &Obj[0],0);
-	D3DXCreateBox(D3DDevice,2.0f,2.0f,2.0f,&Obj[1],0);
-	D3DXCreateCylinder(D3DDevice, 1.0f, 1.0f, 3.0f, 10, 10, &Obj[2], 0);
-	D3DXCreateTorus(D3DDevice, 1.0f, 3.0f, 10, 10, &Obj[3], 0);
+	D3DDevice->SetRenderState(D3DRS_LIGHTING, true);
 
-	D3DXMatrixTranslation(&ObjMatrix[0], 0.0f, 0.0f, 0.0f);
-	D3DXMatrixTranslation(&ObjMatrix[1], -5.0f, 0.0f, 5.0f);
-	D3DXMatrixTranslation(&ObjMatrix[2], 5.0f, 0.0f, 5.0f);
-	D3DXMatrixTranslation(&ObjMatrix[3], -5.0f, 0.0f, -5.0f);
+	D3DDevice->CreateVertexBuffer(
+		12 * sizeof(VertexNormal),
+		D3DUSAGE_WRITEONLY,
+		VertexNormal::FVF,
+		D3DPOOL_MANAGED,
+		&Pyramid,
+		0);
+
+	VertexNormal* v = nullptr ;
+
+	Pyramid->Lock(0,0,(void**)&v,0);
+	v[0] = VertexNormal(-1.0f, 0.0f, -1.0f, 0.0f, 0.707f, -0.707f);
+	v[1] = VertexNormal(0.0f, 1.0f, 0.0f, 0.0f, 0.707f, -0.707f);
+	v[2] = VertexNormal(1.0f, 0.0f, -1.0f, 0.0f, 0.707f, -0.707f);
+
+	v[3] = VertexNormal(-1.0f, 0.0f, 1.0f, -0.707f, 0.707f, 0.0f);
+	v[4] = VertexNormal(0.0f, 1.0f, 0.0f, -0.707f, 0.707f, 0.0f);
+	v[5] = VertexNormal(-1.0f, 0.0f, -1.0f, -0.707f, 0.707f, 0.0f);
+
+	v[6] = VertexNormal(1.0f, 0.0f, -1.0f, 0.707f, 0.707f, 0.0f);
+	v[7] = VertexNormal(0.0f, 1.0f, 0.0f, 0.707f, 0.707f, 0.0f);
+	v[8] = VertexNormal(1.0f, 0.0f, 1.0f, 0.707f, 0.707f, 0.0f);
+
+	v[9] = VertexNormal(1.0f, 0.0f, 1.0f, 0.0f, 0.707f, 0.707f);
+	v[10] = VertexNormal(0.0f, 1.0f, 0.0f, 0.0f, 0.707f, 0.707f);
+	v[11] = VertexNormal(-1.0f, 0.0f, 1.0f, 0.0f, 0.707f, 0.707f);
+
+	Pyramid->Unlock();
+
+	D3DMATERIAL9 mtrl;
+	mtrl = d3d::InitMtrl(d3d::WHITE, d3d::WHITE, d3d::WHITE, d3d::RED,5.0f);
+	D3DDevice->SetMaterial(&mtrl);
+
+	D3DLIGHT9 dir;
+	::ZeroMemory(&dir, sizeof(dir));
+	dir.Type = D3DLIGHT_DIRECTIONAL;
+	dir.Diffuse = d3d::WHITE;
+	dir.Specular = d3d::WHITE * 0.3f;
+	dir.Ambient = d3d::WHITE * 0.6f;
+	dir.Direction = D3DXVECTOR3(1.0f, 0.0f, 0.0f);
+
+	D3DDevice->SetLight(0, &dir);
+	D3DDevice->LightEnable(0, true);
+
+	D3DDevice->SetRenderState(D3DRS_NORMALIZENORMALS, true);
+	D3DDevice->SetRenderState(D3DRS_SPECULARENABLE, true);
+
+	D3DXVECTOR3 pos(0.0f, 1.0f, -3.0f);
+	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
+	D3DXMATRIX V;
+	D3DXMatrixLookAtLH(&V, &pos, &target, &up);
+	D3DDevice->SetTransform(D3DTS_VIEW, &V);
 
 	D3DXMATRIX proj;
 	D3DXMatrixPerspectiveFovLH(
@@ -26,58 +82,43 @@ bool Setup()
 		1.0f,
 		1000.0f);
 	D3DDevice->SetTransform(D3DTS_PROJECTION, &proj);
+	
 
-	D3DDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
 
 	return true;
 }
 void Cleanup()
 {
-	for (int i = 0; i < 4; i++)
-	{
-		d3d::Release<ID3DXMesh*>(Obj[i]);
-	}
+	d3d::Release<IDirect3DVertexBuffer9*>(Pyramid);
 }
 bool Display(float timeDelta)
 {
 	if (D3DDevice)
 	{
 
-		static float angle = (3.0 * D3DX_PI) / 2.0f;
-		static float cameraHeight = 0.0f;
-		static float cameraHeightDirection = 5.0f;
-
-		D3DXVECTOR3 pos(cosf(angle) * 10.0f, cameraHeight, sinf(angle)* 1.0f);
-		D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
-		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
-
-		D3DXMATRIX View;
-		D3DXMatrixLookAtLH(&View, &pos, &target, &up);
 		
-		D3DDevice->SetTransform(D3DTS_VIEW, &View);
+		D3DXMATRIX yRot;
 
-		angle += timeDelta;
-		if (angle >= 6.28f)
-			angle = 0.0f;
+		static float y = 0.0f;
 
-		cameraHeight += cameraHeightDirection * timeDelta;
-		if (cameraHeight >= 10.0f)
-		{
-			cameraHeightDirection = -5.0f;
-		}
-		if (cameraHeight <= -10.0)
-		{
-			cameraHeightDirection = 5.0f;
-		}
+		D3DXMatrixRotationY(&yRot, y);
+		y += timeDelta;
 
-		D3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xffffffff, 1.0f, 0);
+		if (y >= 6.28f)
+			y = 0.0f;
 
+		D3DDevice->SetTransform(D3DTS_WORLD, &yRot);
+
+		//
+		// Draw the scene:
+		//
+
+		D3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
 		D3DDevice->BeginScene();
-		for (int i = 0; i < 4; i++)
-		{
-			D3DDevice->SetTransform(D3DTS_WORLD, &ObjMatrix[i]);
-			Obj[i]->DrawSubset(0);
-		}
+
+		D3DDevice->SetStreamSource(0, Pyramid, 0, sizeof(VertexNormal));
+		D3DDevice->SetFVF(VertexNormal::FVF);
+		D3DDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 4);
 
 		D3DDevice->EndScene();
 		D3DDevice->Present(0, 0, 0, 0);
@@ -96,6 +137,11 @@ LRESULT CALLBACK d3d::winProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (wParam == VK_ESCAPE)
 		{
 			::DestroyWindow(hWnd);
+		}
+		else if (wParam == VK_SPACE)
+		{
+			state = !state;
+			D3DDevice->SetRenderState(D3DRS_LIGHTING, state);
 		}
 		break;
 	default:
