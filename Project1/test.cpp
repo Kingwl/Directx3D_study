@@ -25,7 +25,7 @@ const DWORD Vertex::FVF = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1;
 bool Setup()
 {
 	D3DDevice->CreateVertexBuffer(
-		3 * sizeof(Vertex),
+		6 * sizeof(Vertex),
 		D3DUSAGE_WRITEONLY,
 		Vertex::FVF,
 		D3DPOOL_MANAGED,
@@ -34,29 +34,13 @@ bool Setup()
 
 	Vertex *v;
 	Quad->Lock(0, 0, (void**)&v, 0);
-	v[0] = Vertex(-1.0f, -1.0f, 1.25f,
-					0.0f, 0.0f, -1.0f,
-					0.0f, 1.0f);
+	v[0] = Vertex(-1.0f, -1.0f, 1.25f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
+	v[1] = Vertex(-1.0f, 1.0f, 1.25f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f);
+	v[2] = Vertex(1.0f, 1.0f, 1.25f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
 
-	v[1] = Vertex(-1.0f, 1.0f, 1.25f,
-					0.0f, 0.0f, -1.0f,
-					0.0f, 0.0f);
-
-	v[2] = Vertex(1.0f, 1.0f, 1.25f,
-					0.0f, 0.0f, -1.0f,
-					1.0f, 0.0f);
-
-	v[3] = Vertex(-1.0f, -1.0f, 1.25f,
-					0.0f, 0.0f, -1.0f,
-					0.0f, 1.0f);
-
-	v[4] = Vertex(1.0f, 1.0f, 1.25f, 
-					0.0f, 0.0f, -1.0f,
-					1.0f, 0.0f);
-
-	v[5] = Vertex(1.0f, -1.0f, 1.25f,
-					0.0f, 0.0f, -1.0f, 
-					1.0f, 1.0f);
+	v[3] = Vertex(-1.0f, -1.0f, 1.25f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
+	v[4] = Vertex(1.0f, 1.0f, 1.25f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
+	v[5] = Vertex(1.0f, -1.0f, 1.25f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
 	Quad->Unlock();
 
 	D3DXCreateTextureFromFile(
@@ -92,6 +76,8 @@ bool Display(float timeDelta)
 	if (D3DDevice)
 	{
 		
+		
+
 		D3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
 		D3DDevice->BeginScene();
 
