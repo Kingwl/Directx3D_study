@@ -25,7 +25,7 @@ void initCube()
 {
 	if (D3DDevice)
 	{
-		D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+		D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
 		D3DDevice->CreateVertexBuffer(
 			24*sizeof(Vertex),
 			D3DUSAGE_WRITEONLY,
@@ -51,10 +51,10 @@ void initCube()
 
 		//bottom
 
-		v[4] = Vertex(-1.0f, -1.0f,  -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f);
-		v[5] = Vertex(-1.0f,  1.0f,  -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f);  
-		v[6] = Vertex( 1.0f,  1.0f,  -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f);
-		v[7] = Vertex( 1.0f, -1.0f,  -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f);
+		v[4] = Vertex(-1.0f, -1.0f,  -1.0f,  0.0f,  -1.0f,  0.0f,  0.0f,  0.0f);
+		v[5] = Vertex(1.0f,  -1.0f,  -1.0f,  0.0f,  -1.0f,  0.0f,  1.0f,  0.0f);  
+		v[6] = Vertex( 1.0f,  1.0f,  -1.0f,  0.0f,  -1.0f,  0.0f,  1.0f,  1.0f);
+		v[7] = Vertex( -1.0f, 1.0f,  -1.0f,  0.0f,  -1.0f,  0.0f,  0.0f,  1.0f);
 
 		//left
 
@@ -67,9 +67,9 @@ void initCube()
 		//right
 
 		v[12] = Vertex(1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-		v[13] = Vertex(1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-		v[14] = Vertex(1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
-		v[15] = Vertex(1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+		v[13] = Vertex(1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+		v[14] = Vertex(1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+		v[15] = Vertex(1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 
 
 		//front
@@ -82,10 +82,10 @@ void initCube()
 
 		//back
 
-		v[20] = Vertex(-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f);
-		v[21] = Vertex(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
-		v[22] = Vertex(1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
-		v[23] = Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
+		v[20] = Vertex(1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f);
+		v[21] = Vertex(-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
+		v[22] = Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
+		v[23] = Vertex(1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
 
 		VertexBuffer->Unlock();
 
