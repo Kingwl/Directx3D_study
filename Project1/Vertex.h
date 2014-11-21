@@ -1,8 +1,6 @@
 #pragma once
 #ifndef _VERTEX_
 #define _VERTEX_
-#endif
-
 #include <windows.h>
 #include "d3dx9.h"
 
@@ -18,4 +16,4 @@ public:
 	float _u, _v;
 	static const DWORD FVF = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1;
 };
-
+#endif

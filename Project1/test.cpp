@@ -1,9 +1,9 @@
 #include "d3dUtility.h"
 #include "Vertex.h"
+#include "Cube.h"
 
 const int Height = 600;
 const int Width = 800;
-
 
 
 IDirect3DDevice9 *D3DDevice = nullptr;
@@ -250,7 +250,7 @@ void RenderMirror()
 	D3DDevice->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
 
 	D3DXMATRIX W, T, R;
-	D3DXPLANE plane(0.0f, 0.0f, 1.0f, 0.0f); // xy plane
+	D3DXPLANE plane(0.0f, 0.0f, 1.0f, 0.0f); 
 	D3DXMatrixReflect(&R, &plane);
 
 	D3DXMatrixTranslation(&T,
@@ -349,6 +349,7 @@ bool Display(float timeDelta)
 		DrawObject();
 		RenderShadow();
 		RenderMirror();
+
 
 		D3DDevice->EndScene();
 		D3DDevice->Present(0, 0, 0, 0);
