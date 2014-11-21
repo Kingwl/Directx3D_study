@@ -1,19 +1,9 @@
 #include "d3dUtility.h"
+#include "Vertex.h"
 
 const int Height = 600;
 const int Width = 800;
 
-struct Vertex{
-	Vertex(){};
-	Vertex(float x, float y, float z, float nx, float ny, float nz, float u, float v)
-	:_x(x),_y(y),_z(z),_nx(nx),_ny(ny),_nz(nz),_u(u),_v(v){};
-	~Vertex(){};
-	float _x, _y, _z;
-	float _nx, _ny, _nz;
-	float _u, _v;
-	static const DWORD FVF;
-};
-const DWORD Vertex::FVF = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1;
 
 
 IDirect3DDevice9 *D3DDevice = nullptr;
@@ -229,6 +219,63 @@ void RenderShadow()
 	D3DDevice->SetRenderState(D3DRS_STENCILENABLE, false);
 
 }
+void RenderMirror()
+{
+	D3DDevice->SetRenderState(D3DRS_STENCILENABLE, true);
+	D3DDevice->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_ALWAYS);
+	D3DDevice->SetRenderState(D3DRS_STENCILREF, 0x1);
+	D3DDevice->SetRenderState(D3DRS_STENCILMASK, 0xffffffff);
+	D3DDevice->SetRenderState(D3DRS_STENCILWRITEMASK, 0xffffffff);
+	D3DDevice->SetRenderState(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
+	D3DDevice->SetRenderState(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
+	D3DDevice->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_REPLACE);
+
+	D3DDevice->SetRenderState(D3DRS_ZWRITEENABLE, false);
+	D3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, true);
+	D3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+	D3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+
+	D3DDevice->SetStreamSource(0, MirrorBuffer, 0, sizeof(Vertex));
+	D3DDevice->SetFVF(Vertex::FVF);
+	D3DDevice->SetMaterial(&MirrorMtrl);
+	D3DDevice->SetTexture(0, MirrorText);
+
+	D3DXMATRIX I;
+	D3DXMatrixIdentity(&I);
+	D3DDevice->SetTransform(D3DTS_WORLD, &I);
+	D3DDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2);
+
+	D3DDevice->SetRenderState(D3DRS_ZWRITEENABLE, true);
+	D3DDevice->SetRenderState(D3DRS_STENCILFUNC, D3DCMP_EQUAL);
+	D3DDevice->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
+
+	D3DXMATRIX W, T, R;
+	D3DXPLANE plane(0.0f, 0.0f, 1.0f, 0.0f); // xy plane
+	D3DXMatrixReflect(&R, &plane);
+
+	D3DXMatrixTranslation(&T,
+		teaPortPosition.x,
+		teaPortPosition.y,
+		teaPortPosition.z);
+
+	W = T * R;
+
+	D3DDevice->Clear(0, 0, D3DCLEAR_ZBUFFER, 0, 1.0f, 0);
+	D3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_DESTCOLOR);
+	D3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+
+	D3DDevice->SetTransform(D3DTS_WORLD, &W);
+	D3DDevice->SetMaterial(&teaportMtrl);
+	D3DDevice->SetTexture(0, 0);
+
+	D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
+
+	teaPort->DrawSubset(0);
+
+	D3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
+	D3DDevice->SetRenderState(D3DRS_STENCILENABLE, false);
+	D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+}
 bool Setup()
 {
 	FloorMtrl = d3d::WHITE_MTRL;
@@ -301,6 +348,7 @@ bool Display(float timeDelta)
 		DrawVertex(MirrorBuffer, &MirrorMtrl, MirrorText, 1);
 		DrawObject();
 		RenderShadow();
+		RenderMirror();
 
 		D3DDevice->EndScene();
 		D3DDevice->Present(0, 0, 0, 0);
