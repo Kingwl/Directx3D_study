@@ -2,6 +2,7 @@
 
 
 Cube::Cube(IDirect3DDevice9 *D3DDevice)
+:isDifferent(false)
 {
 	_D3DDevice = D3DDevice;
 
@@ -57,7 +58,7 @@ Cube::Cube(IDirect3DDevice9 *D3DDevice)
 		&_IndexBuffer,
 		0);
 
-	WORD* i = 0;
+	WORD* i = nullptr;
 	_IndexBuffer->Lock(0, 0, (void**)&i, 0);
 
 	i[0] = 0; i[1] = 1; i[2] = 2;
@@ -79,6 +80,97 @@ Cube::Cube(IDirect3DDevice9 *D3DDevice)
 	i[33] = 20; i[34] = 22; i[35] = 23;
 
 	_IndexBuffer->Unlock();
+}
+Cube::Cube(IDirect3DDevice9 *D3DDevice, IDirect3DTexture9 *Texture[])
+:Cube(D3DDevice)
+{
+	isDifferent = true;
+	_Texture = Texture;
+
+	
+	//front
+	_D3DDevice->CreateIndexBuffer(
+		6 * sizeof(WORD),
+		D3DUSAGE_WRITEONLY,
+		D3DFMT_INDEX16,
+		D3DPOOL_MANAGED,
+		&_FaceIndexBuffer[frontFace],
+		0);
+	WORD* i = nullptr;
+	_FaceIndexBuffer[frontFace]->Lock(0, 0, (void**)&i, 0);
+	i[0] = 0; i[1] = 1; i[2] = 2;
+	i[3] = 0; i[4] = 2; i[5] = 3;
+	_FaceIndexBuffer[frontFace]->Unlock();
+
+	//back
+	_D3DDevice->CreateIndexBuffer(
+		6 * sizeof(WORD),
+		D3DUSAGE_WRITEONLY,
+		D3DFMT_INDEX16,
+		D3DPOOL_MANAGED,
+		&_FaceIndexBuffer[backFace],
+		0);
+	_FaceIndexBuffer[backFace]->Lock(0, 0, (void**)&i, 0);
+	i[0] = 4; i[1] = 5; i[2] = 6;
+	i[3] = 4; i[4] = 6; i[5] = 7;
+	_FaceIndexBuffer[backFace]->Unlock();
+
+	//left
+	_D3DDevice->CreateIndexBuffer(
+		6 * sizeof(WORD),
+		D3DUSAGE_WRITEONLY,
+		D3DFMT_INDEX16,
+		D3DPOOL_MANAGED,
+		&_FaceIndexBuffer[leftFace],
+		0);
+	_FaceIndexBuffer[leftFace]->Lock(0, 0, (void**)&i, 0);
+	i[0] = 12; i[1] = 13; i[2] = 14;
+	i[3] = 12; i[4] = 14; i[5] = 15;
+	_FaceIndexBuffer[leftFace]->Unlock();
+
+
+	//right
+
+	_D3DDevice->CreateIndexBuffer(
+		6 * sizeof(WORD),
+		D3DUSAGE_WRITEONLY,
+		D3DFMT_INDEX16,
+		D3DPOOL_MANAGED,
+		&_FaceIndexBuffer[rightFace],
+		0);
+	_FaceIndexBuffer[rightFace]->Lock(0, 0, (void**)&i, 0);
+	i[0] = 8; i[1] = 9; i[2] = 10;
+	i[3] = 8; i[4] = 10; i[5] = 11;
+	_FaceIndexBuffer[rightFace]->Unlock();
+
+
+	//top
+	_D3DDevice->CreateIndexBuffer(
+		6 * sizeof(WORD),
+		D3DUSAGE_WRITEONLY,
+		D3DFMT_INDEX16,
+		D3DPOOL_MANAGED,
+		&_FaceIndexBuffer[topFace],
+		0);
+	_FaceIndexBuffer[topFace]->Lock(0, 0, (void**)&i, 0);
+	i[0] = 16; i[1] = 17; i[2] = 18;
+	i[3] = 16; i[4] = 18; i[5] = 19;
+	_FaceIndexBuffer[topFace]->Unlock();
+
+
+	//bottom
+	_D3DDevice->CreateIndexBuffer(
+		6 * sizeof(WORD),
+		D3DUSAGE_WRITEONLY,
+		D3DFMT_INDEX16,
+		D3DPOOL_MANAGED,
+		&_FaceIndexBuffer[bottomFace],
+		0);
+	_FaceIndexBuffer[bottomFace]->Lock(0, 0, (void**)&i, 0);
+	i[0] = 20; i[1] = 21; i[2] = 22;
+	i[3] = 20; i[4] = 22; i[5] = 23;
+	_FaceIndexBuffer[bottomFace]->Unlock();
+
 }
 Cube::~Cube()
 {
@@ -103,15 +195,31 @@ bool Cube::drawCube(D3DXMATRIX* World, D3DMATERIAL9* Mtrl, IDirect3DTexture9* Te
 	{
 		_D3DDevice->SetMaterial(Mtrl);
 	}
-	if (Texture)
-	{
-		_D3DDevice->SetTexture(0, Texture);
-	}
 
-	_D3DDevice->SetStreamSource(0, _VertexBuffer, 0, sizeof(Vertex));
-	_D3DDevice->SetIndices(_IndexBuffer);
 	_D3DDevice->SetFVF(Vertex::FVF);
-	_D3DDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 24, 0, 12);
+
+	if (isDifferent)
+	{
+		_D3DDevice->SetStreamSource(0, _VertexBuffer, 0, sizeof(Vertex));
+		for (int i = 0; i < 6; i++)
+		{
+			_D3DDevice->SetIndices(_FaceIndexBuffer[i]);
+			_D3DDevice->SetTexture(0, _Texture[i]);
+			_D3DDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 24, 0, 6);
+		}
+
+	}
+	else{
+		if (Texture)
+		{
+			_D3DDevice->SetTexture(0, Texture);
+		}
+
+		_D3DDevice->SetStreamSource(0, _VertexBuffer, 0, sizeof(Vertex));
+		_D3DDevice->SetIndices(_IndexBuffer);
+		_D3DDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 24, 0, 12);
+	}
+	
 
 	return true;
 }

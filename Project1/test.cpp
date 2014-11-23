@@ -23,7 +23,8 @@ D3DMATERIAL9 teaportMtrl;
 IDirect3DVertexBuffer9 *FloorBuffer = nullptr;
 IDirect3DVertexBuffer9 *WallBuffer = nullptr;
 IDirect3DVertexBuffer9 *MirrorBuffer = nullptr;
-
+IDirect3DTexture9 *testT[6];
+Cube *cube;
 bool lightState = true;
 
 void setupTexture()
@@ -114,7 +115,10 @@ void setupTexture()
 			D3DDevice,
 			"mirror.bmp",
 			&MirrorText);
-
+		for (int i = 0; i < 6; i++)
+		{
+			testT[i] = WallText;
+		}
 		D3DDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
 		D3DDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
 		D3DDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_POINT);
@@ -281,6 +285,8 @@ bool Setup()
 	FloorMtrl = d3d::WHITE_MTRL;
 	WallMtrl = d3d::WHITE_MTRL;
 	MirrorMtrl = d3d::WHITE_MTRL;
+	cube = new Cube(D3DDevice,testT);
+
 
 	initLight(); 
 	setupTexture();
@@ -349,7 +355,10 @@ bool Display(float timeDelta)
 		DrawObject();
 		RenderShadow();
 		RenderMirror();
-
+		D3DXMATRIX mm;
+		D3DXMatrixIdentity(&mm);
+		auto m = d3d::WHITE_MTRL;
+		cube->drawCube(&mm,&m,0);
 
 		D3DDevice->EndScene();
 		D3DDevice->Present(0, 0, 0, 0);
