@@ -18,6 +18,7 @@ D3DMATERIAL9 MirrorMtrl = d3d::WHITE_MTRL;
 
 ID3DXMesh *teaPort = nullptr;
 D3DXVECTOR3 teaPortPosition(0.0f, 2.0f, -2.0f);
+D3DXVECTOR3 CubePos(2.0f, 2.0f, -2.0f);
 D3DMATERIAL9 teaportMtrl;
 
 IDirect3DVertexBuffer9 *FloorBuffer = nullptr;
@@ -178,8 +179,15 @@ void DrawObject()
 	D3DXMATRIX W;
 	D3DXMatrixTranslation(&W, teaPortPosition.x, teaPortPosition.y, teaPortPosition.z);
 	D3DDevice->SetTransform(D3DTS_WORLD, &W);
-
 	teaPort->DrawSubset(0);
+
+	D3DXMATRIX C;
+	D3DXMatrixIdentity(&C);
+	D3DXMatrixTranslation(&C, CubePos.x, CubePos.y, CubePos.z);
+	D3DDevice->SetTransform(D3DTS_WORLD, &C);
+	auto m = d3d::WHITE_MTRL;
+	D3DDevice->SetMaterial(&m);
+	cube->drawCube();
 }
 void RenderShadow()
 {
@@ -192,31 +200,39 @@ void RenderShadow()
 	D3DDevice->SetRenderState(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
 	D3DDevice->SetRenderState(D3DRS_STENCILPASS, D3DSTENCILOP_INCR);
 
+
 	D3DXVECTOR4 lightDirection(0.707f, -0.707f, 0.707f, 0.0f);
 	D3DXPLANE groundPlane(0.0f, -1.0f, 0.0f, 0.0f);
-
-	D3DXMATRIX S;
-	D3DXMatrixShadow(&S, &lightDirection, &groundPlane);
-
-	D3DXMATRIX T;
-	D3DXMatrixTranslation(&T, teaPortPosition.x, teaPortPosition.y, teaPortPosition.z);
-
-	D3DXMATRIX W = T * S;
-	D3DDevice->SetTransform(D3DTS_WORLD, &W);
 
 	D3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, true);
 	D3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	D3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-
 	D3DMATERIAL9 mtrl = d3d::InitMtrl(d3d::BLACK, d3d::BLACK, d3d::BLACK, d3d::BLACK, 0.0f);
 	mtrl.Diffuse.a = 0.5f;
-
-	D3DDevice->SetRenderState(D3DRS_ZENABLE, false);
-
 	D3DDevice->SetMaterial(&mtrl);
 	D3DDevice->SetTexture(0, 0);
 
+	D3DDevice->SetRenderState(D3DRS_ZENABLE, false);
+
+	D3DXMATRIX S;
+	D3DXMatrixShadow(&S, &lightDirection, &groundPlane);
+	D3DXMATRIX T;
+	D3DXMatrixTranslation(&T, teaPortPosition.x, teaPortPosition.y, teaPortPosition.z);
+	D3DXMATRIX W = T * S;
+	D3DDevice->SetTransform(D3DTS_WORLD, &W);
 	teaPort->DrawSubset(0);
+
+	D3DXMATRIX A;
+	D3DXMatrixShadow(&A, &lightDirection, &groundPlane);
+	D3DXMATRIX B;
+	D3DXMatrixTranslation(&B, CubePos.x, CubePos.y, CubePos.z);
+	D3DXMATRIX C;
+	D3DXMatrixIdentity(&C);
+	D3DDevice->SetTransform(D3DTS_WORLD, &C);
+	C = B * A;
+	D3DDevice->SetTransform(D3DTS_WORLD, &C);
+	cube->drawCube();
+
 
 	D3DDevice->SetRenderState(D3DRS_ZENABLE, true);
 	D3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
@@ -264,6 +280,15 @@ void RenderMirror()
 
 	W = T * R;
 
+	D3DXMATRIX C, A, B;
+	D3DXMatrixReflect(&B, &plane);
+
+	D3DXMatrixTranslation(&A,
+		CubePos.x,
+		CubePos.y,
+		CubePos.z);
+
+	C = A * B;
 	D3DDevice->Clear(0, 0, D3DCLEAR_ZBUFFER, 0, 1.0f, 0);
 	D3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_DESTCOLOR);
 	D3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
@@ -272,10 +297,12 @@ void RenderMirror()
 	D3DDevice->SetMaterial(&teaportMtrl);
 	D3DDevice->SetTexture(0, 0);
 
-	D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
-
 	teaPort->DrawSubset(0);
 
+	D3DDevice->SetTransform(D3DTS_WORLD, &C);
+	cube->drawCube();
+
+	D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CW);
 	D3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
 	D3DDevice->SetRenderState(D3DRS_STENCILENABLE, false);
 	D3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
@@ -339,7 +366,7 @@ bool Display(float timeDelta)
 		if (::GetAsyncKeyState('S') & 0x8000f)
 			angle += 0.5f * timeDelta;
 
-		D3DXVECTOR3 position(cosf(angle) * radius, 5.0f, sinf(angle) * radius);
+		D3DXVECTOR3 position(cosf(angle) * radius, 3.0f, sinf(angle) * radius);
 		D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
 		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 		D3DXMATRIX V;
@@ -355,10 +382,7 @@ bool Display(float timeDelta)
 		DrawObject();
 		RenderShadow();
 		RenderMirror();
-		D3DXMATRIX mm;
-		D3DXMatrixIdentity(&mm);
-		auto m = d3d::WHITE_MTRL;
-		cube->drawCube(&mm,&m,0);
+		
 
 		D3DDevice->EndScene();
 		D3DDevice->Present(0, 0, 0, 0);
@@ -382,6 +406,9 @@ LRESULT CALLBACK d3d::winProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			lightState = !lightState;
 			D3DDevice->SetRenderState(D3DRS_LIGHTING, lightState);
 		}
+		break;
+	case WM_MOUSEMOVE:
+		
 		break;
 	default:
 		break;

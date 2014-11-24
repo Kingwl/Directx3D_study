@@ -19,6 +19,7 @@ public:
 	Cube(IDirect3DDevice9 *D3DDevice, IDirect3DTexture9 *Texture[]);
 	~Cube();
 	bool drawCube(D3DXMATRIX* World, D3DMATERIAL9* Mtrl, IDirect3DTexture9* Texture);
+	bool drawCube();
 private:
 	bool isDifferent;
 	IDirect3DTexture9 **_Texture;

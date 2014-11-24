@@ -224,3 +224,14 @@ bool Cube::drawCube(D3DXMATRIX* World, D3DMATERIAL9* Mtrl, IDirect3DTexture9* Te
 	return true;
 }
 
+bool Cube::drawCube()
+{
+	if (_D3DDevice)
+	{
+		_D3DDevice->SetFVF(Vertex::FVF);
+		_D3DDevice->SetStreamSource(0, _VertexBuffer, 0, sizeof(Vertex));
+		_D3DDevice->SetIndices(_IndexBuffer);
+		_D3DDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 24, 0, 12);
+	}
+	return true;
+}
