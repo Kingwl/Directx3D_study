@@ -19,9 +19,7 @@ namespace d3d{
 	const D3DMATERIAL9 BLUE_MTRL = InitMtrl(BLUE, BLUE, BLUE, BLACK, 8.0f);
 	const D3DMATERIAL9 YELLOW_MTRL = InitMtrl(YELLOW, YELLOW, YELLOW, BLACK, 8.0f);
 	const D3DMATERIAL9 CYAN_MTRL = InitMtrl(CYAN, CYAN, CYAN, BLACK, 8.0f);
-	D3DLIGHT9 InitDirectionalLight(D3DXVECTOR3 *direction, D3DXCOLOR *color);
-	D3DLIGHT9 InitPointlLight(D3DXVECTOR3 *position, D3DXCOLOR *color);
-	D3DLIGHT9 InitSpotLight(D3DXVECTOR3 *position, D3DXVECTOR3 *direction, D3DXCOLOR *color);
+	
 }
 
 
